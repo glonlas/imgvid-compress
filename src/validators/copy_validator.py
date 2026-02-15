@@ -7,4 +7,4 @@ class CopyValidator(BaseValidator):
 
     @staticmethod
     def should_skip(source_path: Path, dest_path: Path) -> bool:
-        pass
+        raise NotImplementedError()
