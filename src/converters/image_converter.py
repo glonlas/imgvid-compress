@@ -9,7 +9,7 @@ class ImageConverter:
     """Converts images to AVIF format with quality control."""
 
     def __init__(self, quality: int=85):
-        pass
+        raise NotImplementedError()
 
     def convert(self, source_path: Path, dest_path: Path, force: bool=False) -> bool:
-        pass
+        raise NotImplementedError()
