@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 from typing import Dict
 
-from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
@@ -60,7 +59,8 @@ class ConverterOrchestrator:
         self.images_only = images_only
         self.videos_only = videos_only
         self.delete_originals = delete_originals
-        self.console = Console()
+        # Use the same Rich console instance as logging to avoid inline output collisions.
+        self.console = LoggerConfig.console
         self.logger = LoggerConfig.get_logger(__name__)
 
         self.scanner = FileScanner()
