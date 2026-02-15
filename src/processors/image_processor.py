@@ -10,13 +10,13 @@ class ImageProcessor(BaseProcessor):
     """Processes images by converting them to AVIF."""
 
     def __init__(self, converter: ImageConverter=None, validator: ImageValidator=None):
-        pass
+        raise NotImplementedError()
 
     def get_destination_path(self, source_path: Path, dest_root: Path, source_root: Path) -> Path:
-        pass
+        raise NotImplementedError()
 
     def should_skip(self, source_path: Path, dest_path: Path) -> bool:
-        pass
+        raise NotImplementedError()
 
     def execute(self, source_path: Path, dest_path: Path, force: bool) -> bool:
-        pass
+        raise NotImplementedError()
