@@ -5,4 +5,4 @@ class SizeFormatter:
 
     @staticmethod
     def format_size(size_bytes: int) -> str:
-        pass
+        raise NotImplementedError()
