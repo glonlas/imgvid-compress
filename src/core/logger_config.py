@@ -8,8 +8,8 @@ class LoggerConfig:
 
     @classmethod
     def setup(cls, level: int=logging.INFO) -> None:
-        pass
+        raise NotImplementedError()
 
     @classmethod
     def get_logger(cls, name: str) -> logging.Logger:
-        pass
+        raise NotImplementedError()
