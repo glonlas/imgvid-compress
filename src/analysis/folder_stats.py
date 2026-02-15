@@ -8,4 +8,4 @@ class FolderStats:
 
     @property
     def formatted_size(self) -> str:
-        pass
+        raise NotImplementedError()
