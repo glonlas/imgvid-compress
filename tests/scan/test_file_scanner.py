@@ -127,3 +127,20 @@ def test_iter_files_returns_sorted_files_only(tmp_path: Path):
     files = list(FileScanner._iter_files(tmp_path))
 
     assert files == sorted([first, second])
+
+
+def test_scan_logs_home_shortened_path(tmp_path: Path, monkeypatch):
+    scanner = FileScanner()
+    (tmp_path / "sample.jpg").write_text("jpg")
+    logs = []
+
+    monkeypatch.setattr(
+        "src.scan.file_scanner.PathUtils.format_display_path",
+        lambda _p: "~/Pictures/Mazda_RX-8",
+    )
+    scanner.logger = type("Logger", (), {"info": logs.append, "error": logs.append})()
+
+    scanner.scan(tmp_path, dry_run=True, delete_originals=False)
+
+    assert any("Scanning files in" in entry for entry in logs)
+    assert any("~/Pictures/Mazda_RX-8" in entry for entry in logs)
