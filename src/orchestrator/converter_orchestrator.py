@@ -21,28 +21,28 @@ class ConverterOrchestrator:
     """Orchestrates the entire image conversion process."""
 
     def __init__(self, quality: int=85, video_crf: int=28, video_preset: str='medium', video_codec: str='h265', force: bool=False, dry_run: bool=False, images_only: bool=False, videos_only: bool=False, delete_originals: bool=True):
-        pass
+        raise NotImplementedError()
 
     def validate_source(self, source_path: Path) -> bool:
-        pass
+        raise NotImplementedError()
 
     def get_destination_path(self, source_path: Path) -> Path:
-        pass
+        raise NotImplementedError()
 
     def handle_existing_destination(self, dest_path: Path) -> bool:
-        pass
+        raise NotImplementedError()
 
     def display_header(self, source_path: Path, dest_path: Path):
-        pass
+        raise NotImplementedError()
 
     def display_scan_results(self, image_count: int, video_count: int, other_count: int, original_stats):
-        pass
+        raise NotImplementedError()
 
     def display_results(self, stats: Dict[str, int], original_size: int, new_size: int, dest_path: Path):
-        pass
+        raise NotImplementedError()
 
     def _merge_stats(self, base: Dict[str, int], update: Dict[str, int]) -> Dict[str, int]:
-        pass
+        raise NotImplementedError()
 
     def process(self, source_folder: str):
-        pass
+        raise NotImplementedError()
