@@ -95,7 +95,6 @@ Setup:
 
 ```bash
 make install-dev
-make pre-commit-install
 ```
 
 Run full gate:
