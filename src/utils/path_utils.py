@@ -6,8 +6,8 @@ class PathUtils:
 
     @staticmethod
     def get_destination_path(source_path: Path, dest_root: Path, source_root: Path, new_extension: str=None) -> Path:
-        pass
+        raise NotImplementedError()
 
     @staticmethod
     def ensure_parent_dir(file_path: Path) -> None:
-        pass
+        raise NotImplementedError()
