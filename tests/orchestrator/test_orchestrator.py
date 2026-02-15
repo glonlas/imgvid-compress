@@ -187,6 +187,23 @@ def test_orchestrator_merge_stats(monkeypatch):
     assert orchestrator._merge_stats(base, update) == {"converted": 3, "skipped": 3, "failed": 3}
 
 
+def test_orchestrator_log_phase_adds_spacer_and_logs(monkeypatch):
+    orchestrator = _make_orchestrator(monkeypatch)
+    printed = {"count": 0}
+    logged = {"message": None}
+
+    orchestrator.console = SimpleNamespace(
+        print=lambda *_args, **_kwargs: printed.__setitem__("count", printed["count"] + 1)
+    )
+    orchestrator.logger = SimpleNamespace(info=lambda msg: logged.__setitem__("message", msg))
+
+    message = "[cyan]Phase 1/3: Copying non-processable files...[/cyan]"
+    orchestrator._log_phase(message)
+
+    assert printed["count"] == 1
+    assert logged["message"] == message
+
+
 def test_orchestrator_process_invalid_source_exits(tmp_path: Path, monkeypatch):
     orchestrator = _make_orchestrator(monkeypatch)
     monkeypatch.setattr(orchestrator, "validate_source", lambda _path: False)
