@@ -8,10 +8,10 @@ class ImageValidator(BaseValidator):
     """Validates image files and checks whether conversion should be skipped."""
 
     def __init__(self):
-        pass
+        raise NotImplementedError()
 
     def is_valid_image(self, file_path: Path) -> bool:
-        pass
+        raise NotImplementedError()
 
     def should_skip(self, source_path: Path, dest_path: Path) -> bool:
-        pass
+        raise NotImplementedError()
