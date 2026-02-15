@@ -6,19 +6,19 @@ class ProgressTracker:
     """Manages and displays progress for file conversion operations."""
 
     def __init__(self, total_files: int, console: Console=None):
-        pass
+        raise NotImplementedError()
 
     def start(self):
-        pass
+        raise NotImplementedError()
 
     def update(self, increment: int=1, success: bool=True):
-        pass
+        raise NotImplementedError()
 
     def stop(self):
-        pass
+        raise NotImplementedError()
 
     def __enter__(self):
-        pass
+        raise NotImplementedError()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        pass
+        raise NotImplementedError()
