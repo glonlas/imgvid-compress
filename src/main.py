@@ -6,15 +6,15 @@ from .core.logger_config import LoggerConfig
 from .orchestrator.converter_orchestrator import ConverterOrchestrator
 
 def parse_arguments():
-    pass
+    raise NotImplementedError()
 
 def validate_quality(quality: int) -> int:
-    pass
+    raise NotImplementedError()
 
 def validate_video_crf(crf: int, codec: str) -> int:
-    pass
+    raise NotImplementedError()
 
 def main():
-    pass
+    raise NotImplementedError()
 if __name__ == '__main__':
     pass
