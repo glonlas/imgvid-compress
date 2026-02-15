@@ -8,7 +8,7 @@ class FileCopier:
     """Copies files while preserving folder structure."""
 
     def __init__(self):
-        pass
+        raise NotImplementedError()
 
     def copy(self, source_path: Path, dest_path: Path, force: bool=False) -> bool:
-        pass
+        raise NotImplementedError()
