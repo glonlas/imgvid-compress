@@ -11,16 +11,16 @@ class VideoProcessor(BaseProcessor):
     """Processes videos by compressing or copying when already in target codec."""
 
     def __init__(self, converter: VideoConverter, copier: FileCopier, video_validator: VideoValidator=None, copy_validator: CopyValidator=None):
-        pass
+        raise NotImplementedError()
 
     def _is_target_codec(self, source_path: Path) -> bool:
-        pass
+        raise NotImplementedError()
 
     def get_destination_path(self, source_path: Path, dest_root: Path, source_root: Path) -> Path:
-        pass
+        raise NotImplementedError()
 
     def should_skip(self, source_path: Path, dest_path: Path) -> bool:
-        pass
+        raise NotImplementedError()
 
     def execute(self, source_path: Path, dest_path: Path, force: bool) -> bool:
-        pass
+        raise NotImplementedError()
