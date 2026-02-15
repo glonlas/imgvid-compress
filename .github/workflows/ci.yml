@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quality-and-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Sync dependencies
+        run: uv sync --group dev
+
+      - name: Run lint
+        run: uv run --group dev ruff check src tests
+
+      - name: Check formatting
+        run: uv run --group dev ruff format --check src tests
+
+      - name: Complexity gate
+        run: uv run --group dev xenon --max-absolute C --max-modules B --max-average A src
+
+      - name: Run tests
+        run: uv run --group dev pytest --cov=src --cov-report=term-missing --cov-fail-under=100
