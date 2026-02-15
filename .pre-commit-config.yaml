@@ -1,0 +1,19 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.5
+    hooks:
+      - id: ruff-check
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
+  - repo: local
+    hooks:
+      - id: complexity-gate
+        name: Complexity gate (xenon)
+        entry: uv run --group dev xenon --max-absolute C --max-modules B --max-average A src
+        language: system
+        pass_filenames: false
+      - id: tests
+        name: Unit tests (pytest)
+        entry: uv run --group dev pytest --cov=src --cov-report=term-missing --cov-fail-under=100
+        language: system
+        pass_filenames: false
