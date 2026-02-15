@@ -6,8 +6,8 @@ class BaseValidator:
 
     @staticmethod
     def _should_skip_base(source_path: Path, dest_path: Path, check_size_match: bool=False) -> bool:
-        pass
+        raise NotImplementedError()
 
     @staticmethod
     def should_skip(source_path: Path, dest_path: Path) -> bool:
-        pass
+        raise NotImplementedError()
