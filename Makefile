@@ -1,24 +1,29 @@
-.PHONY: help install install-dev setup clean convert dry-run test smoke-test unit-test lint lint-fix format complexity quality pre-commit-install pre-commit-run
+.PHONY: help install install-dev setup clean convert dry-run test smoke-test unit-test lint lint-fix format complexity quality
 
 # Default target
 help:
 	@echo "📦 Image & Video Converter - Available Commands"
 	@echo ""
+	@echo "1. Getting Started"
 	@echo "  make install    - Install everything (UV, venv, dependencies, FFmpeg)"
-	@echo "  make install-dev - Install development dependencies (tests, coverage)"
+	@echo "  make convert    - Convert images/videos (requires FOLDER=path/to/folder)"
+	@echo ""
+	@echo "2. Usage"
 	@echo "  make convert    - Convert images/videos (requires FOLDER=path/to/folder)"
 	@echo "  make dry-run    - Preview conversion without executing (requires FOLDER=)"
-	@echo "  make clean      - Remove virtual environment and cache files"
-	@echo "  make test       - Run unit tests with coverage (100%)"
-	@echo "  make lint       - Run lint checks"
-	@echo "  make lint-fix   - Auto-fix lint issues and format imports"
-	@echo "  make format     - Format code"
-	@echo "  make complexity - Evaluate code complexity with thresholds"
-	@echo "  make quality    - Run full quality checks (lint + complexity + tests)"
-	@echo "  make pre-commit-install - Install git pre-commit hooks"
-	@echo "  make pre-commit-run     - Run pre-commit hooks on all files"
-	@echo "  make smoke-test - Run a test conversion on sample folder"
-	@echo "  make unit-test  - Alias for make test"
+	@echo ""
+	@echo "3. For Developer"
+	@echo "  make install-dev - Install development dependencies (tests, coverage)"
+	@echo "  make clean       - Remove virtual environment and cache files"
+	@echo "  make test        - Run unit-test, smoke-test, and lint"
+	@echo "  make unit-test   - Run unit tests with coverage (100%)"
+	@echo "  make smoke-test  - Run a test conversion on sample folder"
+	@echo "  make lint        - Run lint checks"
+	@echo ""
+	@echo "4. Enhance Code"
+	@echo "  make lint-fix    - Auto-fix lint issues and format imports"
+	@echo "  make format      - Format code"
+	@echo "  make quality     - Run full quality checks (lint + complexity + tests)"
 	@echo ""
 	@echo "Options:"
 	@echo "  FOLDER=path     - Path to folder (required)"
@@ -28,20 +33,21 @@ help:
 	@echo "  VIDEO_PRESET=X  - Video preset: medium, slow, fast, etc. (default: medium)"
 	@echo "  VIDEO_CODEC=X   - Video codec: h265 (fast) or av1 (better, slower) (default: h265)"
 	@echo "  FORCE=1         - Force reconversion of all files"
-	@echo "  KEEP_ORIGINALS=1 - Keep original images even if AVIF exists"
 	@echo "  VERBOSE=1       - Enable verbose output"
+	@echo "  KEEP_ORIGINALS=1 - Keep original images even if AVIF exists (Default is to delete originals)"
 	@echo ""
 	@echo "Examples:"
 	@echo "  make install                                           # First time setup"
+	@echo "  make dry-run FOLDER=/path/to/media                     # Perform a Dry run. No file updated"
 	@echo "  make convert FOLDER=/path/to/media                     # Convert images & videos (H.265)"
-	@echo "  make convert FOLDER=~/Downloads/photos                 # Tilde works"
 	@echo "  make convert FOLDER=/path/to/media MODE=images         # Only convert images"
 	@echo "  make convert FOLDER=/path/to/media MODE=videos         # Only compress videos"
-	@echo "  make convert FOLDER=/path/to/media QUALITY=95          # High quality images"
-	@echo "  make convert FOLDER=/path/to/media VIDEO_CRF=23        # Better video quality"
-	@echo "  make convert FOLDER=/path/to/media VIDEO_CODEC=av1     # Use AV1 (slower, better)"
-	@echo "  make dry-run FOLDER=/path/to/media                     # Preview only"
-	@echo "  make convert FOLDER=/path/to/media FORCE=1 VERBOSE=1"
+	@echo "  make convert FOLDER=/path/to/media QUALITY=95          # Set image quality to 95% (Default is 85)"
+	@echo "  make convert FOLDER=/path/to/media VIDEO_CRF=23        # Set video quality to 23 (Default is 28)"
+	@echo "  make convert FOLDER=/path/to/media VIDEO_CODEC=av1     # Use AV1 (better quality, slower encoding)"
+	@echo "  make convert FOLDER=/path/to/media FORCE=1 VERBOSE=1"	# Force reconversion of all files and enable verbose output
+	
+	
 	@echo ""
 
 # Smart install - handles UV installation, venv creation, and dependencies
@@ -172,18 +178,20 @@ clean:
 # Test conversion (create sample folder if needed)
 smoke-test:
 	@echo "🧪 Running test conversion..."
-	@if [ ! -d "test_images" ]; then \
-		echo "📁 Creating test_images folder..."; \
+	@if [ ! -d "test_images" ] || [ -z "$$(find test_images -type f 2>/dev/null)" ]; then \
+		echo "📁 Preparing sample media in test_images/..."; \
 		mkdir -p test_images/subfolder; \
-		echo "⚠️  Please add some test images to test_images/ and run 'make smoke-test' again"; \
-		exit 1; \
+		uv run python -c "from PIL import Image; Image.new('RGB',(8,8),(64,128,192)).save('test_images/subfolder/sample.png')"; \
 	fi
 	@uv run python -m src.main test_images
 
 # Unit tests with coverage
-test unit-test:
+unit-test:
 	@echo "🧪 Running unit tests with coverage..."
 	@uv run --group dev pytest --cov=src --cov-report=term-missing --cov-fail-under=100
+
+# Full developer test suite
+test: lint unit-test smoke-test
 
 # Lint checks
 lint:
@@ -209,15 +217,4 @@ complexity:
 	@uv run --group dev xenon --max-absolute C --max-modules B --max-average A src
 
 # Full local quality gate
-quality: lint complexity test
-
-# Install local git hooks
-pre-commit-install:
-	@echo "🔗 Installing pre-commit hooks..."
-	@uv run --group dev pre-commit install
-	@echo "✅ pre-commit hooks installed"
-
-# Run hooks manually
-pre-commit-run:
-	@echo "🧰 Running pre-commit hooks..."
-	@uv run --group dev pre-commit run --all-files
+quality: complexity test

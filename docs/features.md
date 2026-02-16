@@ -40,13 +40,6 @@ The `Makefile` is the primary interface for install, run, and quality workflows.
 - `make quality`
   - Full gate: lint + complexity + tests.
 
-### Commit hygiene
-
-- `make pre-commit-install`
-  - Installs local git hooks.
-- `make pre-commit-run`
-  - Runs all hooks on all files.
-
 ## `src/main.py` Features
 
 `src/main.py` is the CLI entrypoint and boundary for user input validation.
