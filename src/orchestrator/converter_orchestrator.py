@@ -287,6 +287,11 @@ class ConverterOrchestrator:
         base["failed"] += update.get("failed", 0)
         return base
 
+    def _log_phase(self, message: str) -> None:
+        """Print a spacer line before phase logs to avoid progress/log collisions."""
+        self.console.print()
+        self.logger.info(message)
+
     def process(self, source_folder: str):
         """
         Main processing method to convert images in a folder.
@@ -333,7 +338,7 @@ class ConverterOrchestrator:
         stats = {"converted": 0, "skipped": 0, "failed": 0}
 
         with ProgressTracker(total_files, console=self.console) as tracker:
-            self.logger.info("[cyan]Phase 1/3: Copying non-processable files...[/cyan]")
+            self._log_phase("[cyan]Phase 1/3: Copying non-processable files...[/cyan]")
             stats = self._merge_stats(
                 stats,
                 self.copy_processor.process_files(
@@ -343,7 +348,7 @@ class ConverterOrchestrator:
 
             if image_files:
                 if self.videos_only:
-                    self.logger.info("[cyan]Phase 2/3: Copying images (videos-only mode)...[/cyan]")
+                    self._log_phase("[cyan]Phase 2/3: Copying images (videos-only mode)...[/cyan]")
                     stats = self._merge_stats(
                         stats,
                         self.copy_processor.process_files(
@@ -351,7 +356,7 @@ class ConverterOrchestrator:
                         ),
                     )
                 else:
-                    self.logger.info("[cyan]Phase 2/3: Converting images to AVIF...[/cyan]")
+                    self._log_phase("[cyan]Phase 2/3: Converting images to AVIF...[/cyan]")
                     stats = self._merge_stats(
                         stats,
                         self.image_processor.process_files(
@@ -361,7 +366,7 @@ class ConverterOrchestrator:
 
             if video_files:
                 if self.images_only:
-                    self.logger.info("[cyan]Phase 3/3: Copying videos (images-only mode)...[/cyan]")
+                    self._log_phase("[cyan]Phase 3/3: Copying videos (images-only mode)...[/cyan]")
                     stats = self._merge_stats(
                         stats,
                         self.copy_processor.process_files(
@@ -369,7 +374,7 @@ class ConverterOrchestrator:
                         ),
                     )
                 elif self.video_processor:
-                    self.logger.info("[cyan]Phase 3/3: Compressing videos...[/cyan]")
+                    self._log_phase("[cyan]Phase 3/3: Compressing videos...[/cyan]")
                     stats = self._merge_stats(
                         stats,
                         self.video_processor.process_files(
@@ -377,7 +382,7 @@ class ConverterOrchestrator:
                         ),
                     )
                 else:
-                    self.logger.info(
+                    self._log_phase(
                         "[cyan]Phase 3/3: Copying videos (FFmpeg not available)...[/cyan]"
                     )
                     stats = self._merge_stats(
