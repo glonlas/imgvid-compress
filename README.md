@@ -1,6 +1,8 @@
 # Image & Video Converter
 
-Convert images to AVIF and videos to H.265/AV1 while preserving folder structure. The tool can resume interrupted runs and keeps non-media files in the output tree.
+Convert images to AVIF and videos to H.265/AV1 while preserving folder structure and original files date time. The tool can resume interrupted runs and keeps non-media files in the output tree.
+
+![Image & Video Converter screenshot](docs/images/imgvid-compress-screenshot.jpg)
 
 ## Getting Started
 
