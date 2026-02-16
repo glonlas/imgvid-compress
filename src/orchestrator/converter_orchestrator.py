@@ -18,6 +18,7 @@ from ..processors.copy_processor import CopyProcessor
 from ..processors.image_processor import ImageProcessor
 from ..processors.video_processor import VideoProcessor
 from ..scan.file_scanner import FileScanner
+from ..utils.path_utils import PathUtils
 from ..utils.size_formatter import SizeFormatter
 
 
@@ -179,8 +180,10 @@ class ConverterOrchestrator:
             )
         )
         self.console.print()
-        self.console.print(f"[cyan]📁 Source:[/cyan]      {source_path}")
-        self.console.print(f"[cyan]📁 Destination:[/cyan] {dest_path}")
+        source_display = PathUtils.format_display_path(source_path)
+        dest_display = PathUtils.format_display_path(dest_path)
+        self.console.print(f"[cyan]📁 Source:[/cyan]      {source_display}")
+        self.console.print(f"[cyan]📁 Destination:[/cyan] {dest_display}")
         self.console.print()
 
     def display_scan_results(

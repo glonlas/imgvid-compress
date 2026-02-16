@@ -38,3 +38,23 @@ class PathUtils:
             file_path: File path whose parent should be created
         """
         file_path.parent.mkdir(parents=True, exist_ok=True)
+
+    @staticmethod
+    def format_display_path(path: Path) -> str:
+        """
+        Format path for user-facing logs.
+
+        Converts paths under the user's home directory to `~` form.
+
+        Args:
+            path: Path to format
+
+        Returns:
+            User-friendly path string
+        """
+        home = Path.home()
+        try:
+            rel = path.relative_to(home)
+            return "~" if str(rel) == "." else f"~/{rel}"
+        except ValueError:
+            return str(path)

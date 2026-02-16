@@ -52,6 +52,22 @@ def test_ensure_parent_dir_raises_when_parent_is_file(tmp_path: Path):
         PathUtils.ensure_parent_dir(target)
 
 
+def test_format_display_path_converts_home_prefix(monkeypatch):
+    monkeypatch.setattr(Path, "home", lambda: Path("/Users/tester"))
+
+    path = Path("/Users/tester/Pictures/Mazda_RX-8")
+
+    assert PathUtils.format_display_path(path) == "~/Pictures/Mazda_RX-8"
+
+
+def test_format_display_path_keeps_non_home_path(monkeypatch):
+    monkeypatch.setattr(Path, "home", lambda: Path("/Users/tester"))
+
+    path = Path("/var/tmp/media")
+
+    assert PathUtils.format_display_path(path) == "/var/tmp/media"
+
+
 def test_format_size_bytes_and_petabytes():
     assert SizeFormatter.format_size(1) == "1.00 B"
     petabytes = 1024**5

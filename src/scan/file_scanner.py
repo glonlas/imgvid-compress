@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, List, Set, Tuple
 
 from ..core.logger_config import LoggerConfig
+from ..utils.path_utils import PathUtils
 
 
 class FileScanner:
@@ -93,7 +94,8 @@ class FileScanner:
         Returns:
             Tuple of (image_files, video_files, other_files) as lists of Path objects
         """
-        self.logger.info(f"[cyan]Scanning files in:[/cyan] {source_path}")
+        source_display = PathUtils.format_display_path(source_path)
+        self.logger.info(f"[cyan]Scanning files in:[/cyan] {source_display}")
 
         image_files: List[Path] = []
         video_files: List[Path] = []
