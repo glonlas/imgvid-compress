@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 from pathlib import Path
 from types import SimpleNamespace
@@ -12,9 +13,11 @@ from src.utils.path_utils import PathUtils
 
 
 class DummyImage:
-    def __init__(self, mode="RGB"):
+    def __init__(self, mode="RGB", exif=None, info=None):
         self.mode = mode
         self.size = (1, 1)
+        self._exif = exif or {}
+        self.info = info or {}
 
     def __enter__(self):
         return self
@@ -32,8 +35,11 @@ class DummyImage:
         self.mode = _mode
         return self
 
-    def save(self, dest_path, _fmt, quality=None):
+    def save(self, dest_path, _fmt, quality=None, exif=None):
         Path(dest_path).write_bytes(b"data")
+
+    def getexif(self):
+        return self._exif
 
 
 def test_file_copier_missing_source(tmp_path: Path):
@@ -154,6 +160,62 @@ def test_image_converter_convert_non_rgb_success(tmp_path: Path, monkeypatch):
 
     assert converter.convert(source, dest, force=False) is True
     assert dest.exists() is True
+
+
+def test_image_converter_preserves_timestamps_and_writes_xmp(tmp_path: Path, monkeypatch):
+    converter = ImageConverter()
+    source = tmp_path / "source.jpg"
+    dest = tmp_path / "dest.avif"
+    source.write_bytes(b"data")
+    os.utime(source, (1234567890, 1234567890))
+
+    exif = {36867: "2021:01:28 18:52:37", 37521: "779", 36881: "+00:00"}
+    monkeypatch.setattr(
+        "src.converters.image_converter.Image.open", lambda _p: DummyImage(mode="RGB", exif=exif)
+    )
+
+    assert converter.convert(source, dest, force=False) is True
+    assert dest.exists() is True
+
+    xmp_path = dest.with_suffix(".xmp")
+    assert xmp_path.exists() is True
+    xmp_text = xmp_path.read_text(encoding="utf-8")
+    assert "<exif:DateTimeOriginal>2021-01-28T18:52:37.779+00:00</exif:DateTimeOriginal>" in xmp_text
+    assert "<photoshop:DateCreated>2021-01-28T18:52:37.779+00:00</photoshop:DateCreated>" in xmp_text
+
+    assert int(dest.stat().st_mtime) == int(source.stat().st_mtime)
+    assert int(xmp_path.stat().st_mtime) == int(source.stat().st_mtime)
+
+
+def test_image_converter_uses_oldest_filesystem_timestamp():
+    converter = ImageConverter()
+    stat_like = SimpleNamespace(st_mtime=2000.0, st_birthtime=1000.0, st_ctime=3000.0)
+    assert converter._get_oldest_filesystem_timestamp(stat_like) == 1000.0
+
+    stat_like_no_birth = SimpleNamespace(st_mtime=2000.0, st_ctime=1500.0)
+    assert converter._get_oldest_filesystem_timestamp(stat_like_no_birth) == 1500.0
+
+
+def test_image_converter_passes_exif_to_avif_save(tmp_path: Path, monkeypatch):
+    converter = ImageConverter()
+    source = tmp_path / "source.jpg"
+    dest = tmp_path / "dest.avif"
+    source.write_bytes(b"data")
+
+    captured = {}
+
+    class ExifImage(DummyImage):
+        def save(self, dest_path, _fmt, quality=None, exif=None):
+            captured["exif"] = exif
+            Path(dest_path).write_bytes(b"data")
+
+    monkeypatch.setattr(
+        "src.converters.image_converter.Image.open",
+        lambda _p: ExifImage(mode="RGB", info={"exif": b"raw-exif-bytes"}),
+    )
+
+    assert converter.convert(source, dest, force=False) is True
+    assert captured["exif"] == b"raw-exif-bytes"
 
 
 def test_image_converter_convert_exception_cleanup(tmp_path: Path, monkeypatch):
@@ -334,8 +396,11 @@ def test_video_converter_convert_success(monkeypatch, tmp_path: Path):
     source = tmp_path / "source.mp4"
     dest = tmp_path / "dest.mp4"
     source.write_bytes(b"data-data")
+    os.utime(source, (1234567890, 1234567890))
+    captured = {}
 
     def fake_run(cmd, *_args, **_kwargs):
+        captured["cmd"] = cmd
         Path(cmd[-1]).write_bytes(b"data")
         return SimpleNamespace(returncode=0, stderr="")
 
@@ -343,6 +408,16 @@ def test_video_converter_convert_success(monkeypatch, tmp_path: Path):
 
     assert converter.convert(source, dest) is True
     assert dest.exists() is True
+    assert int(dest.stat().st_mtime) == int(source.stat().st_mtime)
+
+    cmd = captured["cmd"]
+    assert "-map" in cmd and "0" in cmd
+    assert "-map_metadata" in cmd
+    assert "-map_chapters" in cmd
+    assert cmd[cmd.index("-c:a") + 1] == "copy"
+    assert cmd[cmd.index("-c:s") + 1] == "copy"
+    assert cmd[cmd.index("-c:d") + 1] == "copy"
+    assert cmd[cmd.index("-c:t") + 1] == "copy"
 
 
 def test_video_converter_convert_av1_fallback(monkeypatch, tmp_path: Path):
