@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Convert images to AVIF format with folder structure preservation"
 requires-python = ">=3.9"
 dependencies = [
-    "pillow>=10.0.0",
+    "pillow>=11.3.0",
     "pillow-avif-plugin>=1.4.0",
     "pillow-heif>=0.13.0",
     "rich>=13.7.0",
