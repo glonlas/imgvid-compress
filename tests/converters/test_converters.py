@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -515,3 +516,165 @@ def test_video_converter_cleanup_no_output_file(monkeypatch, tmp_path: Path):
     converter._cleanup_partial_output(missing_dest)
 
     assert missing_dest.exists() is False
+
+
+class _ExifBytes:
+    """Minimal Exif-like object exposing tobytes()."""
+
+    def __init__(self, data, raises=False):
+        self._data = data
+        self._raises = raises
+
+    def __bool__(self):
+        return True
+
+    def tobytes(self):
+        if self._raises:
+            raise ValueError("bad exif")
+        return self._data
+
+    def get(self, _key, default=None):
+        return default
+
+
+class _ImageWithExif:
+    def __init__(self, exif, info=None):
+        self._exif = exif
+        self.info = info or {}
+
+    def getexif(self):
+        return self._exif
+
+
+class _ImageNoExif:
+    info = {}
+
+
+def test_extract_exif_bytes_no_getexif():
+    assert ImageConverter._extract_exif_bytes(_ImageNoExif()) is None
+
+
+def test_extract_exif_bytes_empty_exif_returns_none():
+    assert ImageConverter._extract_exif_bytes(_ImageWithExif(exif={})) is None
+
+
+def test_extract_exif_bytes_tobytes_success():
+    image = _ImageWithExif(exif=_ExifBytes(b"exif-bytes"))
+    assert ImageConverter._extract_exif_bytes(image) == b"exif-bytes"
+
+
+def test_extract_exif_bytes_tobytes_failure():
+    image = _ImageWithExif(exif=_ExifBytes(b"", raises=True))
+    assert ImageConverter._extract_exif_bytes(image) is None
+
+
+def test_extract_capture_datetime_no_getexif():
+    converter = ImageConverter()
+    assert converter._extract_capture_datetime(_ImageNoExif()) is None
+
+
+def test_extract_capture_datetime_no_datetime_tags():
+    converter = ImageConverter()
+    image = _ImageWithExif(exif={99999: "irrelevant"})
+    assert converter._extract_capture_datetime(image) is None
+
+
+def test_extract_capture_datetime_unparseable_datetime():
+    converter = ImageConverter()
+    image = _ImageWithExif(exif={36867: "not-a-date"})
+    assert converter._extract_capture_datetime(image) is None
+
+
+def test_parse_exif_datetime_empty():
+    assert ImageConverter._parse_exif_datetime("   ") is None
+
+
+def test_parse_exif_datetime_iso_fallback():
+    parsed = ImageConverter._parse_exif_datetime("2021-01-28T18:52:37+00:00")
+    assert parsed == datetime(2021, 1, 28, 18, 52, 37, tzinfo=timezone.utc)
+
+
+def test_parse_exif_datetime_invalid():
+    assert ImageConverter._parse_exif_datetime("garbage") is None
+
+
+def test_extract_microseconds_none():
+    assert ImageConverter._extract_microseconds(None) is None
+
+
+def test_extract_microseconds_no_digits():
+    assert ImageConverter._extract_microseconds("--") is None
+
+
+def test_extract_microseconds_value():
+    assert ImageConverter._extract_microseconds("5") == 500000
+
+
+def test_parse_exif_offset_none():
+    assert ImageConverter._parse_exif_offset(None) is None
+
+
+def test_parse_exif_offset_invalid():
+    assert ImageConverter._parse_exif_offset("nonsense") is None
+
+
+def test_parse_exif_offset_positive():
+    tz = ImageConverter._parse_exif_offset("+05:30")
+    assert tz.utcoffset(None).total_seconds() == 5 * 3600 + 30 * 60
+
+
+def test_parse_exif_offset_negative():
+    tz = ImageConverter._parse_exif_offset("-08:00")
+    assert tz.utcoffset(None).total_seconds() == -8 * 3600
+
+
+def test_format_datetime_for_xmp_naive_assumes_utc():
+    naive = datetime(2021, 1, 28, 18, 52, 37)
+    assert ImageConverter._format_datetime_for_xmp(naive) == "2021-01-28T18:52:37.000+00:00"
+
+
+def test_format_datetime_for_xmp_keeps_existing_offset():
+    aware = datetime(2021, 1, 28, 18, 52, 37, tzinfo=timezone.utc)
+    assert ImageConverter._format_datetime_for_xmp(aware).endswith("+00:00")
+
+
+def test_image_converter_exception_cleans_up_xmp_sidecar(tmp_path: Path, monkeypatch):
+    converter = ImageConverter()
+    source = tmp_path / "source.png"
+    dest = tmp_path / "dest.avif"
+    xmp = dest.with_suffix(".xmp")
+    source.write_text("data")
+    xmp.write_text("stale sidecar")
+
+    def fake_open(_path):
+        raise OSError("bad image")
+
+    monkeypatch.setattr("src.converters.image_converter.Image.open", fake_open)
+
+    assert converter.convert(source, dest, force=False) is False
+    assert xmp.exists() is False
+
+
+def test_image_converter_exception_xmp_cleanup_unlink_failure(tmp_path: Path, monkeypatch):
+    converter = ImageConverter()
+    source = tmp_path / "source.png"
+    dest = tmp_path / "dest.avif"
+    xmp = dest.with_suffix(".xmp")
+    source.write_text("data")
+    xmp.write_text("stale sidecar")
+
+    def fake_open(_path):
+        raise OSError("bad image")
+
+    original_unlink = Path.unlink
+
+    def fake_unlink(self: Path):
+        if self == xmp:
+            raise OSError("cannot remove sidecar")
+        return original_unlink(self)
+
+    monkeypatch.setattr("src.converters.image_converter.Image.open", fake_open)
+    monkeypatch.setattr(Path, "unlink", fake_unlink)
+
+    assert converter.convert(source, dest, force=False) is False
+    assert xmp.exists() is True
