@@ -180,8 +180,12 @@ def test_image_converter_preserves_timestamps_and_writes_xmp(tmp_path: Path, mon
     xmp_path = dest.with_suffix(".xmp")
     assert xmp_path.exists() is True
     xmp_text = xmp_path.read_text(encoding="utf-8")
-    assert "<exif:DateTimeOriginal>2021-01-28T18:52:37.779+00:00</exif:DateTimeOriginal>" in xmp_text
-    assert "<photoshop:DateCreated>2021-01-28T18:52:37.779+00:00</photoshop:DateCreated>" in xmp_text
+    assert (
+        "<exif:DateTimeOriginal>2021-01-28T18:52:37.779+00:00</exif:DateTimeOriginal>" in xmp_text
+    )
+    assert (
+        "<photoshop:DateCreated>2021-01-28T18:52:37.779+00:00</photoshop:DateCreated>" in xmp_text
+    )
 
     assert int(dest.stat().st_mtime) == int(source.stat().st_mtime)
     assert int(xmp_path.stat().st_mtime) == int(source.stat().st_mtime)
