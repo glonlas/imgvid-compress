@@ -98,8 +98,18 @@ def test_image_validator_should_skip_logic(tmp_path: Path):
     dest = tmp_path / "dest.avif"
     Image.new("RGB", (1, 1)).save(dest)
     os.utime(dest, (source.stat().st_atime, source.stat().st_mtime + 10))
+    xmp = tmp_path / "dest.xmp"
+    xmp.write_text("xmp-data")
+    os.utime(xmp, (source.stat().st_atime, source.stat().st_mtime + 10))
 
     assert validator.should_skip(source, dest) is True
+
+    xmp.unlink()
+    assert validator.should_skip(source, dest) is False
+
+    xmp.write_text("xmp-data")
+    os.utime(xmp, (source.stat().st_atime, source.stat().st_mtime - 10))
+    assert validator.should_skip(source, dest) is False
 
     dest.unlink()
     assert validator.should_skip(source, dest) is False

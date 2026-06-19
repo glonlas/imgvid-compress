@@ -115,6 +115,28 @@ def test_scan_multiple_directories_triggers_cleanup(tmp_path: Path):
     assert (second / "two.jpg").exists() is True
 
 
+def test_scan_deletes_redundant_original_when_subdir_sorts_between_siblings(tmp_path: Path):
+    # A subdirectory can sort between two sibling files in the sorted walk
+    # ("IMG.backup/" falls between "IMG.avif" and "IMG.heic"), which must not
+    # prevent the redundant original from being detected and deleted.
+    scanner = FileScanner()
+    (tmp_path / "IMG.avif").write_text("avif")
+    (tmp_path / "IMG.heic").write_text("heic")
+    backup = tmp_path / "IMG.backup"
+    backup.mkdir()
+    (backup / "note.txt").write_text("x")
+
+    image_files, _, other_files = scanner.scan(
+        tmp_path,
+        dry_run=False,
+        delete_originals=True,
+    )
+
+    assert (tmp_path / "IMG.heic").exists() is False
+    assert all(path.name != "IMG.heic" for path in image_files)
+    assert any(path.name == "note.txt" for path in other_files)
+
+
 def test_iter_files_returns_sorted_files_only(tmp_path: Path):
     nested = tmp_path / "nested"
     nested.mkdir()

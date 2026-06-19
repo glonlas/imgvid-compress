@@ -102,27 +102,25 @@ class FileScanner:
         other_files: List[Path] = []
         deleted_count = 0
 
-        # Single-pass: group files by directory for redundant original detection
-        current_dir: Path | None = None
-        folder_map: Dict[str, List[Path]] = {}
+        # Group files by their parent directory for redundant original detection.
+        # Keying by parent (rather than tracking directory transitions during the
+        # walk) keeps detection correct regardless of iteration order: a
+        # subdirectory can sort between two sibling files in the sorted walk, which
+        # would otherwise split a directory's files across separate groups.
+        dir_maps: Dict[Path, Dict[str, List[Path]]] = {}
 
         for file_path in self._iter_files(source_path):
-            # When entering a new directory, process the previous one
-            if delete_originals and file_path.parent != current_dir:
-                if current_dir is not None and folder_map:
-                    deleted_count += self._remove_redundant_originals(folder_map, dry_run)
-                current_dir = file_path.parent
-                folder_map = {}
-
-            # Build folder map for redundant original detection
+            # Build per-directory folder map for redundant original detection
             if delete_originals:
+                folder_map = dir_maps.setdefault(file_path.parent, {})
                 folder_map.setdefault(file_path.stem, []).append(file_path)
 
             self._categorize_file(file_path, image_files, video_files, other_files)
 
-        # Process the last directory
-        if delete_originals and folder_map:
-            deleted_count += self._remove_redundant_originals(folder_map, dry_run)
+        # Process each directory's grouped files
+        if delete_originals:
+            for folder_map in dir_maps.values():
+                deleted_count += self._remove_redundant_originals(folder_map, dry_run)
 
         # Remove deleted files from image_files list
         if deleted_count > 0:

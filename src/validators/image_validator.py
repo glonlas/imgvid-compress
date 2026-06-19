@@ -59,4 +59,9 @@ class ImageValidator(BaseValidator):
             self.logger.debug(f"Destination file is invalid, will reconvert: {dest_path.name}")
             return False
 
+        xmp_path = dest_path.with_suffix(".xmp")
+        if not BaseValidator._should_skip_base(source_path, xmp_path):
+            self.logger.debug(f"XMP sidecar missing or stale, will reconvert: {xmp_path.name}")
+            return False
+
         return True

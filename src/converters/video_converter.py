@@ -1,6 +1,7 @@
 """Video converter for compressing videos using FFmpeg."""
 
 import json
+import os
 import shutil
 import subprocess
 from pathlib import Path
@@ -131,6 +132,12 @@ class VideoConverter:
             "ffmpeg",
             "-i",
             str(source_path),
+            "-map",
+            "0",  # Keep all streams (video/audio/subtitles/data)
+            "-map_metadata",
+            "0",  # Preserve container metadata
+            "-map_chapters",
+            "0",  # Preserve chapter markers
             "-c:v",
             "libx265",  # Video codec: H.265/HEVC
             "-crf",
@@ -144,9 +151,13 @@ class VideoConverter:
             "-tag:v",
             "hvc1",  # Use hvc1 tag (Apple/macOS prefers this over hev1)
             "-c:a",
-            "aac",  # Audio codec: AAC
-            "-b:a",
-            "128k",  # Audio bitrate
+            "copy",  # Preserve original audio bitstream
+            "-c:s",
+            "copy",  # Preserve subtitles
+            "-c:d",
+            "copy",  # Preserve data streams
+            "-c:t",
+            "copy",  # Preserve attachments/thumbnails when supported
             "-movflags",
             "+faststart",  # Enable streaming & Quick Look
             "-y",  # Overwrite output
@@ -159,6 +170,12 @@ class VideoConverter:
             "ffmpeg",
             "-i",
             str(source_path),
+            "-map",
+            "0",  # Keep all streams (video/audio/subtitles/data)
+            "-map_metadata",
+            "0",  # Preserve container metadata
+            "-map_chapters",
+            "0",  # Preserve chapter markers
             "-c:v",
             "libsvtav1",  # Video codec: AV1 (SVT-AV1 is faster)
             "-crf",
@@ -166,9 +183,13 @@ class VideoConverter:
             "-preset",
             str(self._map_av1_preset(self.preset)),  # AV1 presets are 0-13
             "-c:a",
-            "libopus",  # Audio codec: Opus (better for AV1/WebM)
-            "-b:a",
-            "128k",  # Audio bitrate
+            "copy",  # Preserve original audio bitstream
+            "-c:s",
+            "copy",  # Preserve subtitles
+            "-c:d",
+            "copy",  # Preserve data streams
+            "-c:t",
+            "copy",  # Preserve attachments/thumbnails when supported
             "-movflags",
             "+faststart",  # Enable streaming
             "-y",  # Overwrite output
@@ -227,6 +248,11 @@ class VideoConverter:
             f"{reduction:+.1f}%)"
         )
 
+    @staticmethod
+    def _preserve_timestamps(source_path: Path, dest_path: Path) -> None:
+        source_stat = source_path.stat()
+        os.utime(dest_path, (source_stat.st_atime, source_stat.st_mtime))
+
     def convert(self, source_path: Path, dest_path: Path, force: bool = False) -> bool:
         """
         Convert a video to H.265/HEVC or AV1 format.
@@ -280,6 +306,7 @@ class VideoConverter:
                 self._cleanup_partial_output(dest_path)
                 return False
 
+            self._preserve_timestamps(source_path, dest_path)
             self._log_conversion_summary(source_path, dest_path)
             return True
 
